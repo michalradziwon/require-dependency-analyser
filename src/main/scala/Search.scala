@@ -1,11 +1,11 @@
-object search {
+object Search {
   def main(args: Array[String]) {
     runTests();
     val projectPath = if (args.isEmpty) "." else args(0)
     val jsFiles = recursivelyListFiles(new java.io.File(projectPath)).filter(byExtension(List("js", "jsx")))
 
     // Array[(java.io.File, List[String])] - array of tuples (file, line[]) with all .js and .jsx files
-    val jsFilesContent = jsFiles.map(path => (path, scala.io.Source.fromFile(path).getLines.toList))
+    val jsFilesContent = jsFiles.map(file => (file, scala.io.Source.fromFile(file).getLines.toList))
 
     // Array[(String, List[String])] - array of tuples (jsFilePathRelativeToProjectPath, dependecyRelativePath[])
     val jsFilesWithDependencies = jsFilesContent.map(e => (useSlashInsteadOfBackslash(e._1.getAbsolutePath().substring(projectPath.length() + 1)), e._2.map(extractRequiredFiles).flatten)).filterNot(_._2.isEmpty)
