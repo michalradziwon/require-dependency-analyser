@@ -18,6 +18,9 @@ object Search {
     jsFilesWithDependencies.foreach(e => { println(e._1); e._2.foreach(f => println("   " + f)) })
     println("\n" * 5)
     dependencies.foreach(println)
+    
+    val graph = GraphmlExporter.createGraph(dependencies);
+    GraphmlExporter.saveToGraphML(graph, "dependencies.graphml");
 
     // TODO to be finished!!!!
     // TODO add following functionality:

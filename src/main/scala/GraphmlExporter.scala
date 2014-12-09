@@ -8,9 +8,9 @@ import org.jgrapht.graph.AbstractGraph
 import org.jgrapht.graph.Pseudograph
 
 object GraphmlExporter {
-//  def createSimpleGraph(): AbstractGraph[String, DefaultEdge] = {
-//    return createGraph(List(("a", "b"), ("b", "b"), ("b", "C")));
-//  }
+  //  def createSimpleGraph(): AbstractGraph[String, DefaultEdge] = {
+  //    return createGraph(List(("a", "b"), ("b", "b"), ("b", "C")));
+  //  }
 
   def createGraph(edges: Seq[(String, String)]) = {
     val graph = new Pseudograph[String, DefaultEdge](classOf[DefaultEdge]);
@@ -28,15 +28,14 @@ object GraphmlExporter {
       def getVertexName(vertex: String) = vertex
     };
     val edgeIDProvider = new EdgeNameProvider[DefaultEdge]() {
-      def getEdgeName(edge: DefaultEdge) = graph.getEdgeSource(edge) + " ] " + graph.getEdgeTarget(edge);
+      def getEdgeName(edge: DefaultEdge) = graph.getEdgeSource(edge) + " ] " + graph.getEdgeTarget(edge)
     };
     val edgeLabelProvider = new EdgeNameProvider[DefaultEdge]() {
       def getEdgeName(edge: DefaultEdge) = edge + ""
     };
     val exporter = new GraphMLExporter[String, DefaultEdge](vertexIDProvider, vertexNameProvider,
-      edgeIDProvider, edgeLabelProvider);
+      edgeIDProvider, edgeLabelProvider)
 
-    val fw = new FileWriter(filename);
-    exporter.export(fw, graph);
+    exporter.export(new FileWriter(filename), graph)
   }
 }
