@@ -10,23 +10,32 @@ object Search {
     // Array[(String, List[String])] - array of tuples (jsFilePathRelativeToProjectPath, dependecyRelativePath[])
     val jsFilesWithDependencies = jsFilesContent.map(e => (useSlashInsteadOfBackslash(e._1.getAbsolutePath().substring(projectPath.length() + 1)), e._2.map(extractRequiredFiles).flatten)).filterNot(_._2.isEmpty)
 
-    // Array[(String, String)] - array with pairs (file,dependencyFile)
-    var dependencies = jsFilesWithDependencies.map(e => e._2.map(dep => (e._1, joinPaths(e._1, dep, projectPath)))).flatten
+    // similar to the previous one, but without global dependencies
+    val jsFileWithDependenciesWithoutGlobalDependencies = jsFilesWithDependencies.map(e => (e._1, e._2.filter(_.startsWith("."))))
+
+    // Array[(String, String)] - array with pairs (file,dependencyFile); file names are normalized (.js extenstion is removed)
+    var dependencies = jsFileWithDependenciesWithoutGlobalDependencies.map(e => e._2.map(dep => (e._1, joinPaths(e._1, dep, projectPath)))).flatten
+    var normalizedDependencies = dependencies.map(e => (normalizeFileName(e._1), normalizeFileName(e._2)))
 
     println(s"There is ${jsFilesContent.size} files with .js and .jsx extenstions")
-    println(s"There is ${jsFilesWithDependencies.size} JS files with declared 'require' dependencies")
-    jsFilesWithDependencies.foreach(e => { println(e._1); e._2.foreach(f => println("   " + f)) })
+    println(s"There is ${jsFileWithDependenciesWithoutGlobalDependencies.size} JS files with declared 'require' dependencies")
+    jsFileWithDependenciesWithoutGlobalDependencies.foreach(e => { println(e._1); e._2.foreach(f => println("   " + f)) })
     println("\n" * 5)
-    dependencies.foreach(println)
-    
-    val graph = GraphmlExporter.createGraph(dependencies);
+    normalizedDependencies.foreach(println)
+
+    val graph = GraphmlExporter.createGraph(normalizedDependencies);
     GraphmlExporter.saveToGraphML(graph, "dependencies.graphml");
 
     // TODO to be finished!!!!
     // TODO add following functionality:
-    // * if file does not end with .js it means that it is .js by default ... it should be handled
     // * optional ignoring of external (3rd party) dependencies
+    // * optional ignoring tests
   }
+
+  /**
+   * if file does not end with .js it means that it is .js by default
+   */
+  def normalizeFileName(fileName: String) = if (fileName.endsWith(".js")) fileName.dropRight(".js".length) else fileName
 
   def useSlashInsteadOfBackslash(path: String) = path.replaceAll("\\\\", "/")
   def recursivelyListFiles(f: java.io.File): Array[java.io.File] = f.listFiles ++ f.listFiles.filter(_.isDirectory).flatMap(recursivelyListFiles)
