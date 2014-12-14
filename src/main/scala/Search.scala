@@ -41,8 +41,9 @@ object Search {
     println(s"There is ${jsFilesContent.size} files with .js and .jsx extenstions")
     println(s"There is ${jsFileWithDependenciesWithoutGlobalDependencies.size} JS files with declared 'require' dependencies")
 
-    GraphmlExporter.export(normalizedDependenciesWithoutIgnoredModules, "dependencies.graphml")
-    TxtExporter.export(normalizedDependenciesWithoutIgnoredModules, "depencencies.txt")
+    GraphmlExporter.export(normalizedDependenciesWithoutIgnoredModules, "output/dependencies.graphml")
+    TxtExporter.export(normalizedDependenciesWithoutIgnoredModules, "output/dependencies.txt")
+    CytoscapeExporter.export(normalizedDependenciesWithoutIgnoredModules, "output/dependencies.html")
 
   }
 
