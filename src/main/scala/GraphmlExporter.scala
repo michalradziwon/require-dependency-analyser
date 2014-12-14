@@ -7,10 +7,9 @@ import java.io.FileWriter
 import org.jgrapht.graph.AbstractGraph
 import org.jgrapht.graph.Pseudograph
 
-object GraphmlExporter {
-  //  def createSimpleGraph(): AbstractGraph[String, DefaultEdge] = {
-  //    return createGraph(List(("a", "b"), ("b", "b"), ("b", "C")));
-  //  }
+object GraphmlExporter extends Exporter {
+
+  def export(graph: Seq[(String, String)], filename: String) = saveToGraphML(createGraph(graph), filename)
 
   def createGraph(edges: Seq[(String, String)]) = {
     val graph = new Pseudograph[String, DefaultEdge](classOf[DefaultEdge]);
@@ -37,5 +36,6 @@ object GraphmlExporter {
       edgeIDProvider, edgeLabelProvider)
 
     exporter.export(new FileWriter(filename), graph)
+    println(s"Exported graph in 'GraphML' format to file '${new java.io.File(".").getCanonicalPath().replaceAll("\\\\", "/") + "/" + filename}'.")
   }
 }

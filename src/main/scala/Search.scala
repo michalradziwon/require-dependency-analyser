@@ -1,11 +1,31 @@
 object Search {
+
+  /**
+   * Program arguments: ${projectPath} ${ignoredPaths} ${ignoredModules}
+   * 	${projectPath} - absolute path to analysed project path directory
+   *  	${ignoredPaths} - project's subpath that will be ignored during a graph generation; separated with a colon
+   *   	${ignoredModules} - modules skipped during a graph generation; separated by a colon
+   *   	TODO: TO BE IMPLEMENTED: ${outputFormat} - generated graph's output format; one of ["GraphML", "txt"]
+   * 	Example program arguments: ~/projects/Project1/src js/__tests__ js/environment/Logger
+   */
   def main(args: Array[String]) {
     runTests();
     val projectPath = if (args.isEmpty) "." else args(0)
+    val ignoredPaths = if (args.length >= 2) args(1).split(":").toSet[String].map(p => new java.io.File(projectPath + "/" + p)) else Set[java.io.File]()
+    val ignoredModules = if (args.length >= 3) args(2).split(":").toSet[String] else Set[String]()
+
+    println("IGNORED PATHS:")
+    ignoredPaths.foreach(println(_))
+    println("")
+    println("IGNORED MODULES:")
+    ignoredModules.foreach(println(_))
+    println("")
+
     val jsFiles = recursivelyListFiles(new java.io.File(projectPath)).filter(byExtension(List("js", "jsx")))
+    val notIgnoredJsFiles = jsFiles.filter(file => ignoredPaths.filter(ignoredPath => file.getCanonicalPath().startsWith(ignoredPath.getCanonicalPath())).isEmpty)
 
     // Array[(java.io.File, List[String])] - array of tuples (file, line[]) with all .js and .jsx files
-    val jsFilesContent = jsFiles.map(file => (file, scala.io.Source.fromFile(file).getLines.toList))
+    val jsFilesContent = notIgnoredJsFiles.map(file => (file, scala.io.Source.fromFile(file).getLines.toList))
 
     // Array[(String, List[String])] - array of tuples (jsFilePathRelativeToProjectPath, dependecyRelativePath[])
     val jsFilesWithDependencies = jsFilesContent.map(e => (useSlashInsteadOfBackslash(e._1.getAbsolutePath().substring(projectPath.length() + 1)), e._2.map(extractRequiredFiles).flatten)).filterNot(_._2.isEmpty)
@@ -16,20 +36,14 @@ object Search {
     // Array[(String, String)] - array with pairs (file,dependencyFile); file names are normalized (.js extenstion is removed)
     var dependencies = jsFileWithDependenciesWithoutGlobalDependencies.map(e => e._2.map(dep => (e._1, joinPaths(e._1, dep, projectPath)))).flatten
     var normalizedDependencies = dependencies.map(e => (normalizeFileName(e._1), normalizeFileName(e._2)))
+    var normalizedDependenciesWithoutIgnoredModules = normalizedDependencies.filter(e => !ignoredModules.contains(e._1) && !ignoredModules.contains(e._2))
 
     println(s"There is ${jsFilesContent.size} files with .js and .jsx extenstions")
     println(s"There is ${jsFileWithDependenciesWithoutGlobalDependencies.size} JS files with declared 'require' dependencies")
-    jsFileWithDependenciesWithoutGlobalDependencies.foreach(e => { println(e._1); e._2.foreach(f => println("   " + f)) })
-    println("\n" * 5)
-    normalizedDependencies.foreach(println)
 
-    val graph = GraphmlExporter.createGraph(normalizedDependencies);
-    GraphmlExporter.saveToGraphML(graph, "dependencies.graphml");
+    GraphmlExporter.export(normalizedDependenciesWithoutIgnoredModules, "dependencies.graphml")
+    TxtExporter.export(normalizedDependenciesWithoutIgnoredModules, "depencencies.txt")
 
-    // TODO to be finished!!!!
-    // TODO add following functionality:
-    // * optional ignoring of external (3rd party) dependencies
-    // * optional ignoring tests
   }
 
   /**
@@ -66,8 +80,8 @@ object Search {
     e(joinPaths("""js\service\BatchSpec.js""", """./Service""", new java.io.File(".").getCanonicalPath()), """js/service/Service""")
     e(joinPaths("""js\service\BatchSpec.js""", """../Service""", new java.io.File(".").getCanonicalPath()), """js/Service""")
     e(joinPaths("""js\service\BatchSpec.js""", """../../lib/CrazyLib.js""", new java.io.File(".").getCanonicalPath()), """lib/CrazyLib.js""")
-    e(joinPaths("""js\main.js""", """./Service.js""", """C:\CodeMobile\MobileWebDemo\app\"""), """js/Service.js""")
-    try { joinPaths("""js\main.js""", """/absolute/path/not/supported/Service.js""", """C:\CodeMobile\MobileWebDemo\app\"""); throw new IllegalStateException("Should throw exception here"); } catch { case e: UnsupportedOperationException => {} }
+    e(joinPaths("""js\main.js""", """./Service.js""", """C:\src\Project1\app\"""), """js/Service.js""")
+    try { joinPaths("""js\main.js""", """/absolute/path/not/supported/Service.js""", """C:\src\Project1\app\"""); throw new IllegalStateException("Should throw exception here"); } catch { case e: UnsupportedOperationException => {} }
 
     println("Tests ok")
   }
